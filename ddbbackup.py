@@ -1,5 +1,3 @@
-#version v14
-# Create by : Masudur Rahaman Sayem
 from __future__ import print_function
 from datetime import date, datetime, timedelta
 import json
