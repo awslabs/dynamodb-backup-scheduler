@@ -1,12 +1,3 @@
-# Copyright 2017-2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License"). You may not use this file except in compliance with the License. A copy of the License is located at
-#
-#    http://aws.amazon.com/apache2.0/
-#
-# or in the "license" file accompanying this file. This file is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-
-
 from __future__ import print_function
 from datetime import date, datetime, timedelta
 import json
@@ -15,7 +6,7 @@ import time
 from botocore.exceptions import ClientError
 
 ddbTable = 'test'
-backupName = 'Schedule_Backup_V14'
+backupName = 'Schedule_Backup_V15'
 print('Backup started for: ', backupName)
 ddb = boto3.client('dynamodb', region_name='us-east-1')
 
@@ -43,7 +34,7 @@ def lambda_handler(event, context):
 		response = ddb.list_backups(TableName=ddbTable, TimeRangeLowerBound=datetime(2017, 11, 29), TimeRangeUpperBound=datetime(deleteupperDate.year, deleteupperDate.month, deleteupperDate.day))
 		
 		#check whether latest backup count is more than two before removing the old backup
-		if latestBackupCount>2:
+		if latestBackupCount>1:
 			if 'LastEvaluatedBackupArn' in response:
 				lastEvalBackupArn = response['LastEvaluatedBackupArn']
 			else:
