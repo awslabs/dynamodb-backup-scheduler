@@ -1,6 +1,6 @@
 {
-    "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Sample template to schedule DynamoDB table backup using Lambda- V0.14",
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Sample template to schedule DynamoDB table backup using Lambda- V0.21",
 	"Parameters": {
 		"BucketName":{
 			"Type": "String",
@@ -9,9 +9,31 @@
 		"FileName":{
 			"Type": "String",
 			"Description": "Enter file name"
-			}
-		},
-    "Resources": {
+    },
+    "DDBTableName":{
+      "Type": "String",
+      "Description": "Enter DynamoDB Table name to enable backup"
+    },
+    "BackupRetention": {
+      "Type": "Number",
+      "Description": "Days keep the backup"
+    }
+	},
+  "Metadata" : {
+     "AWS::CloudFormation::Interface" : {
+      "ParameterGroups" : [
+        {
+          "Label" : { "default" : "Lambda Function" },
+          "Parameters" : [ "BucketName", "FileName" ]
+        },
+        {
+          "Label" : { "default":"Target DynamoDB table to backup" },
+          "Parameters" : [ "DDBTableName", "BackupRetention" ]
+        }
+      ]
+     }
+  },
+  "Resources": {
         "LambdaServiceExecutionRole": {
             "Properties": {
                 "AssumeRolePolicyDocument": {
@@ -30,27 +52,65 @@
                     ],
                     "Version": "2012-10-17"
                 },
-                "Path": "/",
-                "Policies": [{
-                    "PolicyName": "root",
-                    "PolicyDocument": {
-                        "Version": "2012-10-17",
-                        "Statement": [{
-                            "Effect": "Allow",
-                            "Action": ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],
-                            "Resource": "arn:aws:logs:*:*:*"
-                        },
-                        {
-                            "Effect": "Allow",
-                            "Action": [ "dynamodb:CreateBackup", "dynamodb:ListBackups", "dynamodb:DeleteBackup" ],
-                            "Resource": "*"
-                        }]
-                    }
-                }]
+                "Path": "/"
             },
             "Type": "AWS::IAM::Role"
         },
-        "scheduledEvent": {
+        "LambdaServiceExecutionRolePolicy":{
+           "Type": "AWS::IAM::Policy",
+           "Properties": {
+              "PolicyName": "DDBBackupLambdaRolePolicy",
+              "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [{
+                      "Effect": "Allow",
+                      "Action": ["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],
+                      "Resource": {
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:aws:logs:",
+                            {"Ref": "AWS::Region"},
+                            ":",
+                            {"Ref": "AWS::AccountId"},
+                            ":",
+                            "log-group:",
+                            "/aws/lambda/",
+                            {"Ref": "DDBBackup"},
+                            ":*"
+                          ]
+                        ]
+                      }
+                  },
+                  {
+                      "Effect": "Allow",
+                      "Action": [ "dynamodb:CreateBackup", "dynamodb:DeleteBackup" ],
+                      "Resource": [{
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:aws:dynamodb:",
+                            {"Ref": "AWS::Region"},
+                            ":",
+                            {"Ref": "AWS::AccountId"},
+                            ":",
+                            "table/",
+                            {"Ref": "DDBTableName"}
+                          ]
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                      "Effect": "Allow",
+                      "Action": [ "dynamodb:ListBackups" ],
+                      "Resource": "*"
+                  }]
+              },
+              "Roles": [ { "Ref": "LambdaServiceExecutionRole" } ]
+           }
+        },
+        "ScheduledEvent": {
             "Properties": {
                 "Description": "CloudWatch event to trigger lambda SG function",
                 "ScheduleExpression": "rate(1 day)",
@@ -70,7 +130,7 @@
             "FunctionName" : { "Fn::GetAtt" : ["DDBBackup", "Arn"] },
             "Action": "lambda:InvokeFunction",
             "Principal": "events.amazonaws.com",
-            "SourceArn" : { "Fn::GetAtt" : ["scheduledEvent", "Arn"] }
+            "SourceArn" : { "Fn::GetAtt" : ["ScheduledEvent", "Arn"] }
           }
         },
         "DDBBackup": {
@@ -78,7 +138,7 @@
                 "Code": {
                     "S3Bucket": {"Ref": "BucketName"},
                     "S3Key": {"Ref": "FileName"}
-                    
+
                 },
                 "Handler": "ddbbackup.lambda_handler",
                 "MemorySize": 128,
@@ -89,10 +149,15 @@
                     ]
                 },
                 "Runtime": "python3.6",
-                "Timeout": 300
+                "Timeout": 300,
+                "Environment": {
+                  "Variables": {
+                    "DDBTable": { "Ref": "DDBTableName"},
+                    "BackupRetention": { "Ref": "BackupRetention"}
+                  }
+                }
             },
             "Type": "AWS::Lambda::Function"
         }
-        }
-    }
-
+  }
+}
