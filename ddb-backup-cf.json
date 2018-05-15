@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Sample template to schedule DynamoDB table backup using Lambda- V0.21",
+  "Description": "Sample template to schedule DynamoDB table backup using Lambda- V0.22",
 	"Parameters": {
 		"BucketName":{
 			"Type": "String",
@@ -84,7 +84,7 @@
                   },
                   {
                       "Effect": "Allow",
-                      "Action": [ "dynamodb:CreateBackup", "dynamodb:DeleteBackup" ],
+                      "Action": [ "dynamodb:CreateBackup" ],
                       "Resource": [{
                         "Fn::Join": [
                           "",
@@ -103,7 +103,7 @@
                   },
                   {
                       "Effect": "Allow",
-                      "Action": [ "dynamodb:ListBackups" ],
+                      "Action": [ "dynamodb:ListBackups", "dynamodb:DeleteBackup" ],
                       "Resource": "*"
                   }]
               },
