@@ -4,4 +4,4 @@ A cloudFormation template - Since DynamoDb backup is ondemand feature - this CF 
 
 ## License
 
-This library is licensed under the Amazon Software License.
+This sample code is made available under the MIT-0 license. See the LICENSE file.
