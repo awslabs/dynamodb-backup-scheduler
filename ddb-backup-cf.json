@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Sample template to schedule DynamoDB table backup using Lambda- V0.22",
+  "Description": "Sample template to schedule DynamoDB table backup using Lambda- V0.23",
 	"Parameters": {
 		"BucketName":{
 			"Type": "String",
@@ -85,7 +85,8 @@
                   {
                       "Effect": "Allow",
                       "Action": [ "dynamodb:CreateBackup" ],
-                      "Resource": [{
+                      "Resource": 
+					  [{
                         "Fn::Join": [
                           "",
                           [
@@ -104,7 +105,22 @@
                   {
                       "Effect": "Allow",
                       "Action": [ "dynamodb:ListBackups", "dynamodb:DeleteBackup" ],
-                      "Resource": "*"
+                      "Resource": [{
+                        "Fn::Join": [
+                          "",
+                          [
+                            "arn:aws:dynamodb:",
+                            {"Ref": "AWS::Region"},
+                            ":",
+                            {"Ref": "AWS::AccountId"},
+                            ":",
+                            "table/",
+                            {"Ref": "DDBTableName"},
+							"/backup/*"
+                          ]
+                        ]
+                      }
+                    ]
                   }]
               },
               "Roles": [ { "Ref": "LambdaServiceExecutionRole" } ]
